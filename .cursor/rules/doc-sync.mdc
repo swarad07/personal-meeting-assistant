@@ -1,0 +1,28 @@
+---
+description: Keep architecture docs and cursor rules in sync when making structural changes
+alwaysApply: true
+---
+
+# Documentation Sync
+
+When making structural changes, ALL related artifacts must be updated together before the task is complete.
+
+## Change -> Required Updates
+
+- **Add/remove an agent** -> update `docs/ARCHITECTURE.md` (agents section, pipeline diagram)
+- **Add/remove an MCP provider** -> update `docs/ARCHITECTURE.md` (MCP section)
+- **Change data models** -> update `docs/ARCHITECTURE.md` (data models section), create Alembic migration
+- **Change project structure** -> update `docs/ARCHITECTURE.md` (project structure tree)
+- **Change search architecture** -> update `docs/ARCHITECTURE.md` (search section)
+- **Change agent/MCP base class contract** -> update the corresponding `.mdc` rule file with new skeleton
+
+## Verification Checklist
+
+Before claiming a structural change is complete:
+
+1. `docs/ARCHITECTURE.md` reflects the current state
+2. Relevant `.cursor/rules/*.mdc` files are still accurate
+3. Alembic migration created (if DB schema changed)
+4. `AgentState` TypedDict updated (if agent inputs/outputs changed)
+
+When in doubt, re-read `docs/ARCHITECTURE.md` to confirm the current state.

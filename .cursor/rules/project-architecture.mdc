@@ -1,0 +1,27 @@
+---
+description: Core architecture constraints for the Personal Meeting Assistant
+alwaysApply: true
+---
+
+# Project Architecture
+
+Canonical reference: `docs/ARCHITECTURE.md` -- read it before any structural changes.
+
+## Structure
+
+- Monorepo: `frontend/` (Next.js 15 TypeScript) + `backend/` (Python 3.12 FastAPI) + `docs/`
+- Docker Compose: 6 services (frontend, backend, gcal-mcp, postgres, neo4j, redis)
+
+## Boundaries
+
+- Frontend never accesses databases directly -- all data flows through `backend:8000` REST API
+- API routes (`backend/app/api/routes/`) are thin -- business logic lives in `backend/app/services/`
+- Agents access MCP providers only via `MCPRegistry`, never by direct import
+- Agents access databases only via services or the injected `db_session` / `neo4j_driver` in `AgentState`
+
+## Conventions
+
+- Environment variables via `.env` (never hardcode secrets)
+- All new PostgreSQL schema changes require an Alembic migration
+- All new agents must extend `BaseAgent` from `agents/base.py`
+- All new MCP providers must extend `BaseMCPProvider` from `mcp/base.py`

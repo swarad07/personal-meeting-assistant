@@ -1,0 +1,50 @@
+---
+description: How to create and modify MCP providers (BaseMCPProvider contract)
+globs: backend/app/mcp/**/*.py
+alwaysApply: false
+---
+
+# MCP Provider Development
+
+## Contract
+
+Every provider must extend `BaseMCPProvider` from `mcp/base.py`:
+
+```python
+from app.mcp.base import BaseMCPProvider, AuthType, ProviderStatus
+
+class MyNewProvider(BaseMCPProvider):
+    name = "my_provider"
+    description = "What this provider connects to"
+    auth_type = AuthType.OAUTH2  # OAUTH2 | API_KEY | NONE
+
+    async def connect(self, credentials: dict) -> bool:
+        # Establish connection using credentials
+        # For OAuth2: credentials contains access_token, refresh_token
+        # For API_KEY: credentials contains api_key
+        ...
+
+    async def disconnect(self) -> bool:
+        # Clean up connection
+        ...
+
+    async def list_tools(self) -> list[dict]:
+        # Return available MCP tools with their schemas
+        ...
+
+    async def execute_tool(self, tool_name: str, params: dict) -> Any:
+        # Execute an MCP tool and return the result
+        ...
+
+    async def health_check(self) -> ProviderStatus:
+        # Return current connection health
+        ...
+```
+
+## Rules
+
+- Provider files go in `backend/app/mcp/providers/` and are auto-discovered by `MCPRegistry`
+- Never import providers directly in agent code -- agents use the registry
+- OAuth tokens are stored encrypted in the `mcp_connections` PostgreSQL table
+- Token refresh is handled automatically by `BaseMCPProvider` for OAuth2 providers
+- `health_check()` is called periodically -- return `ProviderStatus.HEALTHY`, `DEGRADED`, or `DISCONNECTED`

@@ -1,0 +1,49 @@
+---
+description: How to create and modify AI agents (BaseAgent contract)
+globs: backend/app/agents/**/*.py
+alwaysApply: false
+---
+
+# Agent Development
+
+## Contract
+
+Every agent must extend `BaseAgent` from `agents/base.py`:
+
+```python
+from app.agents.base import BaseAgent, AgentState
+
+class MyNewAgent(BaseAgent):
+    name = "my_new_agent"
+    description = "What this agent does"
+    pipeline = "sync"  # "sync" | "briefing" | "on_demand"
+    dependencies = ["meeting_sync"]  # agents that must run before this one
+    required_mcp_providers = []  # e.g., ["granola", "gcal"]
+
+    async def should_run(self, state: AgentState) -> bool:
+        return len(state["new_meeting_ids"]) > 0
+
+    async def process(self, state: AgentState) -> AgentState:
+        # Process each meeting individually with error isolation
+        for meeting_id in state["new_meeting_ids"]:
+            try:
+                # ... processing logic ...
+                pass
+            except Exception as e:
+                state["errors"].append({
+                    "meeting_id": meeting_id,
+                    "agent": self.name,
+                    "error": str(e),
+                })
+        return state
+```
+
+## Rules
+
+- Agent files go in `backend/app/agents/` and are auto-discovered by `AgentRegistry`
+- Never import other agents directly -- dependencies are resolved by the registry
+- Never access MCP providers directly -- use `state["mcp_registry"].get("provider_name")`
+- Handle errors per-item (per-meeting), never let one failure crash the pipeline
+- Check `meeting_processing_status` before processing (idempotency)
+- Update `meeting_processing_status` after processing each meeting
+- Three pipelines exist: `sync`, `briefing`, `on_demand` -- declare the correct one

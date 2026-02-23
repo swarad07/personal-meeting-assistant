@@ -1,0 +1,31 @@
+---
+description: Next.js frontend coding patterns
+globs: frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Next.js Frontend Patterns
+
+## Framework
+
+- Next.js 15 App Router with server components by default
+- Add `"use client"` only when the component needs hooks, event handlers, or browser APIs
+- TypeScript strict mode, shared types in `lib/types.ts`
+
+## UI
+
+- shadcn/ui for all primitives (Button, Input, Dialog, Card, Table, etc.) -- never raw HTML
+- Tailwind CSS only (no CSS modules, no styled-components)
+- Light mode only -- no dark mode toggle
+- Layout: collapsible sidebar (Notion/Linear style) in `components/layout/Sidebar.tsx`
+- Global search: shadcn `CommandDialog` (Cmd+K) in `components/layout/CommandMenu.tsx`
+
+## Data Fetching
+
+- TanStack Query (`@tanstack/react-query`) for all client-side data fetching
+- No raw `fetch()` in components -- use the typed API client in `lib/api-client.ts`
+- Server components can fetch directly from the backend in `page.tsx` files
+
+## Visualization
+
+- React Flow (`@xyflow/react`) for the relationship graph on `/relationships`

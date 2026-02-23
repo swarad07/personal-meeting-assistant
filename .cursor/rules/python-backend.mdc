@@ -1,0 +1,37 @@
+---
+description: Python backend coding patterns (FastAPI, SQLAlchemy, LangGraph)
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Python Backend Patterns
+
+## Framework
+
+- FastAPI with `async def` for all route handlers and service methods
+- Pydantic v2 for all request/response schemas in `app/api/schemas/`
+- pydantic-settings for configuration (`app/config.py`)
+
+## Database
+
+- SQLAlchemy 2.0 async ORM with `asyncpg` driver
+- Alembic for all schema migrations -- never modify tables without a migration
+- Neo4j async driver, sessions scoped per-request via FastAPI dependency injection
+- pgvector for vector columns, tsvector + GIN index for full-text search
+
+## API Routes
+
+- Routes are thin: validate input, call service, return response
+- All errors return `{"detail": "..."}` JSON
+- Use FastAPI `Depends()` for db sessions, auth, and registry injection
+
+## Services
+
+- `app/services/` owns all business logic and database access
+- Services are async classes or functions, never synchronous blocking calls
+- OpenAI calls via the `openai` async client
+
+## Agents & MCP
+
+- See `agent-development.mdc` and `mcp-provider-development.mdc` for agent/provider patterns
+- Never import agents or MCP providers directly -- always use the registry
