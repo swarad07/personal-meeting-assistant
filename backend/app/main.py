@@ -16,6 +16,7 @@ from app.api.routes import (
     profiles,
     relationships,
     search,
+    settings as settings_routes,
     status,
 )
 from app.config import settings
@@ -48,6 +49,10 @@ async def lifespan(app: FastAPI):
             logger.warning("Agent validation: %s", issue)
 
     await init_neo4j_constraints()
+
+    # Load DB-stored settings (e.g. OpenAI key) into runtime config
+    from app.api.routes.settings import load_settings_from_db
+    await load_settings_from_db()
 
     # Restore saved connections from DB and auto-connect local providers
     from app.db.postgres import async_session_factory
@@ -116,6 +121,7 @@ app.include_router(action_items.router, prefix="/api/action-items", tags=["actio
 app.include_router(briefings.router, prefix="/api/briefings", tags=["briefings"])
 app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
 app.include_router(connections.router, prefix="/api/connections", tags=["connections"])
+app.include_router(settings_routes.router, prefix="/api/settings", tags=["settings"])
 app.include_router(status.router, prefix="/api/status", tags=["status"])
 
 

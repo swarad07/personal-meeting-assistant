@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     granola_mcp_url: str = "https://mcp.granola.ai/mcp"
     gcal_mcp_url: str = "http://gcal-mcp:8100"
 
+    google_client_id: str = ""
+    google_client_secret: str = ""
+
+    primary_user_email: str = ""
+    primary_user_name: str = ""
+
     sync_batch_size: int = 10
     sync_interval_minutes: int = 15
     encryption_key: str = "change-me-in-production-32bytes!"

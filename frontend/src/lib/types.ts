@@ -89,6 +89,7 @@ export interface Profile {
   email: string | null;
   bio: string | null;
   traits: Record<string, unknown> | null;
+  aliases: string[] | null;
   meeting_count: number;
 }
 

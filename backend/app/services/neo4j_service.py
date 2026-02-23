@@ -130,9 +130,11 @@ class Neo4jService:
         WITH e, r, connected
         UNWIND r as rel
         RETURN
-            labels(e)[0] as source_type, e.id as source_id, e.name as source_name,
+            labels(e)[0] as source_type, e.id as source_id,
+            COALESCE(e.name, e.title, e.id) as source_name,
             type(rel) as rel_type, properties(rel) as rel_props,
-            labels(connected)[0] as target_type, connected.id as target_id, connected.name as target_name
+            labels(connected)[0] as target_type, connected.id as target_id,
+            COALESCE(connected.name, connected.title, connected.id) as target_name
         LIMIT 200
         """
         async with self.driver.session() as session:
@@ -184,7 +186,8 @@ class Neo4jService:
             label = type_map[node_type.lower()]
             node_query = f"""
             MATCH (n:{label})
-            RETURN labels(n)[0] as type, n.id as id, n.name as name, properties(n) as props
+            RETURN labels(n)[0] as type, n.id as id,
+                   COALESCE(n.name, n.title, n.id) as name, properties(n) as props
             LIMIT $limit
             """
             edge_query = f"""
@@ -196,7 +199,8 @@ class Neo4jService:
             node_query = """
             MATCH (n)
             WHERE n:Person OR n:Organization OR n:Topic OR n:Project
-            RETURN labels(n)[0] as type, n.id as id, n.name as name, properties(n) as props
+            RETURN labels(n)[0] as type, n.id as id,
+                   COALESCE(n.name, n.title, n.id) as name, properties(n) as props
             LIMIT $limit
             """
             edge_query = """
@@ -258,11 +262,12 @@ class Neo4jService:
         if not record:
             return {"entity": None, "neighbors": [], "edges": []}
 
+        props = record["entity_props"]
         entity = {
             "id": entity_id,
-            "label": record["entity_props"].get("name", entity_id),
+            "label": props.get("name") or props.get("title") or entity_id,
             "type": record["entity_type"].lower(),
-            "properties": dict(record["entity_props"]),
+            "properties": dict(props),
         }
 
         neighbors: dict[str, dict] = {}
@@ -273,16 +278,17 @@ class Neo4jService:
             node = item["node"]
             if rel is None or node is None:
                 continue
-            nid = dict(node).get("id", "")
+            nprops = dict(node)
+            nid = nprops.get("id", "")
             if not nid:
                 continue
             labels = list(node.labels) if hasattr(node, "labels") else []
             ntype = labels[0].lower() if labels else "unknown"
             neighbors[nid] = {
                 "id": nid,
-                "label": dict(node).get("name", nid),
+                "label": nprops.get("name") or nprops.get("title") or nid,
                 "type": ntype,
-                "properties": dict(node),
+                "properties": nprops,
             }
             edges.append({
                 "id": f"{entity_id}-{rel.type}-{nid}",
@@ -297,16 +303,17 @@ class Neo4jService:
             node = item["node"]
             if rel is None or node is None:
                 continue
-            nid = dict(node).get("id", "")
+            nprops = dict(node)
+            nid = nprops.get("id", "")
             if not nid:
                 continue
             labels = list(node.labels) if hasattr(node, "labels") else []
             ntype = labels[0].lower() if labels else "unknown"
             neighbors[nid] = {
                 "id": nid,
-                "label": dict(node).get("name", nid),
+                "label": nprops.get("name") or nprops.get("title") or nid,
                 "type": ntype,
-                "properties": dict(node),
+                "properties": nprops,
             }
             edges.append({
                 "id": f"{nid}-{rel.type}-{entity_id}",

@@ -99,12 +99,27 @@ def _compute_duration_minutes(start_str: str | None, end_str: str | None) -> int
 
 def normalize_meeting(detail: dict[str, Any], granola_id: str) -> dict[str, Any]:
     """Parse a Granola document into a flat meeting dict ready for DB upsert."""
+    from app.config import settings
+
     attendees = []
     for att in detail.get("attendees", []):
         if isinstance(att, dict):
             attendees.append({
                 "name": att.get("name", att.get("email", "Unknown")),
                 "email": att.get("email"),
+                "role": None,
+            })
+
+    # Granola omits the meeting owner from attendees — inject them
+    primary_email = settings.primary_user_email
+    if primary_email:
+        existing_emails = {
+            (a["email"] or "").lower() for a in attendees if a.get("email")
+        }
+        if primary_email.lower() not in existing_emails:
+            attendees.insert(0, {
+                "name": settings.primary_user_name or primary_email.split("@")[0],
+                "email": primary_email,
                 "role": None,
             })
 
@@ -148,7 +163,7 @@ async def sync_all_meetings(granola_provider: Any) -> dict[str, Any]:
     errors: list[dict[str, Any]] = []
 
     try:
-        meetings_list = await granola_provider.execute_tool("list-documents", {"limit": 500})
+        meetings_list = await granola_provider.execute_tool("list-documents", {})
     except Exception as e:
         return {"new": 0, "updated": 0, "skipped": 0, "errors": [str(e)]}
 

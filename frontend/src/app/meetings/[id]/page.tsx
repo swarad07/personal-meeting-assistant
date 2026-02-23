@@ -142,17 +142,24 @@ export default function MeetingDetailPage({
     queryFn: () => api.profiles.list(1, 500),
   });
 
-  const findProfileId = (name: string, email: string | null): string | undefined => {
-    if (!profilesData?.items) return undefined;
-    for (const p of profilesData.items) {
-      if (p.name.toLowerCase() === name.toLowerCase()) return p.id;
-      if (email && p.email && p.email.toLowerCase() === email.toLowerCase()) return p.id;
+  const emailToProfile = (() => {
+    const map = new Map<string, { id: string; type: string }>();
+    if (profilesData?.items) {
+      for (const p of profilesData.items) {
+        if (p.email) map.set(p.email.toLowerCase(), { id: p.id, type: p.type });
+      }
     }
-    const nameLower = name.toLowerCase();
-    for (const p of profilesData.items) {
-      if (p.name.toLowerCase().includes(nameLower) || nameLower.includes(p.name.toLowerCase())) return p.id;
-    }
-    return undefined;
+    return map;
+  })();
+
+  const selfEmail = profilesData?.items?.find((p) => p.type === "self")?.email?.toLowerCase();
+
+  const resolveAttendeeLink = (email: string | null): string | null => {
+    if (!email) return null;
+    const lower = email.toLowerCase();
+    if (lower === selfEmail) return "/profiles/me";
+    const match = emailToProfile.get(lower);
+    return match ? `/profiles/${match.id}` : null;
   };
 
   if (isLoading) {
@@ -469,13 +476,13 @@ export default function MeetingDetailPage({
               </h2>
               <ul className="space-y-1">
                 {meeting.attendees.map((a, i) => {
-                  const profileId = findProfileId(a.name, a.email);
+                  const link = resolveAttendeeLink(a.email);
 
                   return (
                     <li key={a.id}>
-                      {profileId ? (
+                      {link ? (
                         <Link
-                          href={`/profiles/${profileId}`}
+                          href={link}
                           className="flex items-center gap-2.5 rounded-lg -mx-2 px-2 py-1.5 hover:bg-accent-50/50 transition-colors group"
                         >
                           <div

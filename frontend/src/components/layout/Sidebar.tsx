@@ -29,6 +29,7 @@ const navItems = [
   { href: "/briefings", label: "Briefings", icon: FileText },
   { href: "/action-items", label: "Action Items", icon: CheckSquare },
   { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -150,23 +151,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Settings (bottom) */}
-      <div className="border-t border-white/10 px-2 py-3">
-        <Link
-          href="/settings/connections"
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-            isActive("/settings")
-              ? "bg-white/15 text-white shadow-sm"
-              : "text-white/60 hover:bg-white/8 hover:text-white/90",
-            collapsed && "justify-center px-0",
-          )}
-          title={collapsed ? "Settings" : undefined}
-        >
-          <Settings size={18} className="shrink-0" />
-          {!collapsed && <span className="truncate">Settings</span>}
-        </Link>
-      </div>
+      <div className="border-t border-white/10 py-1" />
     </aside>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import Link from "next/link";
-import { CheckSquare, Clock, User } from "lucide-react";
+import { CheckSquare, Clock, User, UserCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getInitials } from "@/lib/utils";
 import type { Profile } from "@/lib/types";
@@ -34,11 +34,22 @@ function getGradient(name: string): string {
 
 export default function ActionItemsPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>("open");
+  const [forMe, setForMe] = useState(false);
   const queryClient = useQueryClient();
 
+  const { data: selfProfile } = useQuery({
+    queryKey: ["profile", "me"],
+    queryFn: () => api.profiles.me(),
+  });
+
+  const selfName =
+    selfProfile && selfProfile.name !== "Me" ? selfProfile.name : null;
+
+  const assigneeFilter = forMe && selfName ? selfName : undefined;
+
   const { data, isLoading } = useQuery({
-    queryKey: ["actionItems", statusFilter],
-    queryFn: () => api.actionItems.list(statusFilter),
+    queryKey: ["actionItems", statusFilter, assigneeFilter],
+    queryFn: () => api.actionItems.list(statusFilter, assigneeFilter),
   });
 
   const { data: profilesData } = useQuery({
@@ -74,20 +85,54 @@ export default function ActionItemsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 rounded-2xl bg-surface-overlay p-1 mb-6 w-fit">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.label}
-            onClick={() => setStatusFilter(tab.value)}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-              statusFilter === tab.value
-                ? "bg-white text-text-primary shadow-sm"
-                : "text-text-muted hover:text-text-secondary"
-            }`}
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="flex items-center gap-1 rounded-2xl bg-surface-overlay p-1 w-fit">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.label}
+              onClick={() => setStatusFilter(tab.value)}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                statusFilter === tab.value
+                  ? "bg-white text-text-primary shadow-sm"
+                  : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => {
+            if (!selfName) return;
+            setForMe((v) => !v);
+          }}
+          disabled={!selfName}
+          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium border transition-all ${
+            forMe && selfName
+              ? "bg-accent-500 text-white border-accent-500 shadow-md shadow-accent-500/20"
+              : selfName
+                ? "border-border text-text-secondary hover:border-accent-300 hover:text-accent-600"
+                : "border-border text-text-muted cursor-not-allowed opacity-60"
+          }`}
+          title={
+            selfName
+              ? `Filter items assigned to ${selfName}`
+              : "Set up your identity in Profiles first"
+          }
+        >
+          <UserCheck size={14} />
+          For me
+        </button>
+
+        {!selfName && (
+          <Link
+            href="/profiles/me"
+            className="text-xs text-accent-500 hover:text-accent-700 underline transition-colors"
           >
-            {tab.label}
-          </button>
-        ))}
+            Set up your name to enable this filter
+          </Link>
+        )}
       </div>
 
       {isLoading && (
@@ -134,7 +179,6 @@ export default function ActionItemsPage() {
                   </p>
 
                   <div className="mt-2 flex items-center gap-3 flex-wrap">
-                    {/* Assignee chip */}
                     {profile ? (
                       <Link
                         href={`/profiles/${profile.id}`}
@@ -201,7 +245,7 @@ export default function ActionItemsPage() {
             <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
               <CheckSquare className="mx-auto h-10 w-10 text-text-muted" />
               <p className="mt-3 text-sm text-text-muted">
-                No {statusFilter || ""} action items
+                No {forMe && selfName ? `action items for ${selfName}` : `${statusFilter || ""} action items`}
               </p>
             </div>
           )}

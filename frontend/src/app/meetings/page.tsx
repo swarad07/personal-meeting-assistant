@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { format, isToday, isYesterday, isTomorrow, parseISO, differenceInMinutes } from "date-fns";
 import {
   MessageSquare,
   Users,
@@ -14,16 +14,26 @@ import {
   Database,
   Loader2,
   Timer,
+  CalendarDays,
+  History,
+  MapPin,
+  ExternalLink,
+  FileText,
+  CalendarOff,
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import type { Meeting } from "@/lib/types";
+import type { Meeting, CalendarEvent } from "@/lib/types";
+
+type Tab = "past" | "upcoming";
 
 const PAGE_SIZE = 30;
+const DAY_OPTIONS = [7, 14, 30] as const;
 
 function formatDateHeading(dateStr: string): string {
   const d = parseISO(dateStr);
   if (isToday(d)) return "Today";
   if (isYesterday(d)) return "Yesterday";
+  if (isTomorrow(d)) return "Tomorrow";
   return format(d, "EEEE, MMMM d, yyyy");
 }
 
@@ -49,7 +59,71 @@ function groupByDate(meetings: Meeting[]): { date: string; label: string; meetin
   }));
 }
 
+function groupEventsByDate(events: CalendarEvent[]): { date: string; label: string; events: CalendarEvent[] }[] {
+  const groups = new Map<string, CalendarEvent[]>();
+  for (const e of events) {
+    const key = dateKey(e.start);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(e);
+    } else {
+      groups.set(key, [e]);
+    }
+  }
+  return Array.from(groups.entries()).map(([key, items]) => ({
+    date: key,
+    label: formatDateHeading(items[0].start),
+    events: items,
+  }));
+}
+
 export default function MeetingsPage() {
+  const [activeTab, setActiveTab] = useState<Tab>("past");
+
+  return (
+    <div className="p-8 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary">
+            Meetings
+          </h1>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 rounded-2xl bg-surface-overlay p-1 mb-6 w-fit">
+        <button
+          onClick={() => setActiveTab("past")}
+          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === "past"
+              ? "bg-white text-text-primary shadow-sm"
+              : "text-text-muted hover:text-text-secondary"
+          }`}
+        >
+          <History size={14} />
+          Past Meetings
+        </button>
+        <button
+          onClick={() => setActiveTab("upcoming")}
+          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === "upcoming"
+              ? "bg-white text-text-primary shadow-sm"
+              : "text-text-muted hover:text-text-secondary"
+          }`}
+        >
+          <CalendarDays size={14} />
+          Upcoming
+        </button>
+      </div>
+
+      {activeTab === "past" && <PastMeetings />}
+      {activeTab === "upcoming" && <UpcomingMeetings />}
+    </div>
+  );
+}
+
+/* ── Past Meetings (existing infinite scroll) ──────────────────────── */
+
+function PastMeetings() {
   const {
     data,
     isLoading,
@@ -96,21 +170,14 @@ export default function MeetingsPage() {
   const dateGroups = useMemo(() => groupByDate(allMeetings), [allMeetings]);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-text-primary">
-            Meetings
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            {totalCount > 0
-              ? `${totalCount} meetings synced`
-              : isLoading
-                ? "Loading..."
-                : "No meetings yet"}
-          </p>
-        </div>
-      </div>
+    <>
+      <p className="text-sm text-text-muted mb-6">
+        {totalCount > 0
+          ? `${totalCount} meetings synced`
+          : isLoading
+            ? "Loading..."
+            : "No meetings yet"}
+      </p>
 
       {isLoading && (
         <div className="space-y-4">
@@ -171,9 +238,125 @@ export default function MeetingsPage() {
           All {totalCount} meetings loaded
         </p>
       )}
-    </div>
+    </>
   );
 }
+
+/* ── Upcoming Meetings (Google Calendar) ───────────────────────────── */
+
+function UpcomingMeetings() {
+  const [days, setDays] = useState<number>(7);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["calendar-events", days],
+    queryFn: () => api.calendar.events(days),
+    retry: false,
+  });
+
+  const isDisconnected =
+    error && (error as Error).message?.includes("503");
+
+  const events = data?.events ?? [];
+  const eventGroups = useMemo(() => groupEventsByDate(events), [events]);
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-sm text-text-muted">
+          {isLoading
+            ? "Loading..."
+            : isDisconnected
+              ? "Google Calendar not connected"
+              : `${events.length} event${events.length !== 1 ? "s" : ""} in the next ${days} days`}
+        </p>
+
+        {!isDisconnected && (
+          <div className="flex items-center gap-1 rounded-xl bg-surface-overlay p-0.5">
+            {DAY_OPTIONS.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setDays(opt)}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${
+                  days === opt
+                    ? "bg-white text-text-primary shadow-sm"
+                    : "text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {opt}d
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {isLoading && (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 rounded-2xl shimmer" />
+          ))}
+        </div>
+      )}
+
+      {isDisconnected && (
+        <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
+          <CalendarOff className="mx-auto h-10 w-10 text-text-muted" />
+          <p className="mt-3 text-sm font-medium text-text-secondary">
+            Google Calendar not connected
+          </p>
+          <p className="mt-1 text-xs text-text-muted">
+            Connect your Google Calendar in Settings to see upcoming meetings.
+          </p>
+          <Link
+            href="/settings"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl gradient-bg px-5 py-2 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-lg shadow-accent-500/25"
+          >
+            Go to Settings
+          </Link>
+        </div>
+      )}
+
+      {error && !isDisconnected && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Failed to load calendar events: {(error as Error).message}
+        </div>
+      )}
+
+      {eventGroups.length > 0 && (
+        <div className="space-y-8">
+          {eventGroups.map((group) => (
+            <section key={group.date}>
+              <div className="py-2">
+                <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">
+                  {group.label}
+                  <span className="ml-2 text-xs font-normal normal-case">
+                    ({group.events.length} event{group.events.length !== 1 && "s"})
+                  </span>
+                </h2>
+              </div>
+
+              <div className="space-y-2 mt-2">
+                {group.events.map((event) => (
+                  <EventCard key={event.event_id} event={event} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      {events.length === 0 && !isLoading && !error && (
+        <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
+          <CalendarDays className="mx-auto h-10 w-10 text-text-muted" />
+          <p className="mt-3 text-sm text-text-muted">
+            No upcoming events in the next {days} days.
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────── */
 
 function MeetingCard({ meeting }: { meeting: Meeting }) {
   return (
@@ -260,6 +443,100 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
           {meeting.attendees.length > 4 && (
             <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-surface-overlay text-[10px] font-semibold text-text-muted">
               +{meeting.attendees.length - 4}
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function EventCard({ event }: { event: CalendarEvent }) {
+  const start = parseISO(event.start);
+  const end = parseISO(event.end);
+  const durationMin = differenceInMinutes(end, start);
+
+  return (
+    <Link href={`/calendar/${event.event_id}`} className="block glass-card p-5 hover:ring-2 hover:ring-accent-500/30 transition-all cursor-pointer">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-semibold text-text-primary truncate">
+              {event.title}
+            </h3>
+            {event.briefing && (
+              <span className="badge badge-success text-[10px] gap-1 shrink-0">
+                <FileText size={9} />
+                Briefing ready
+              </span>
+            )}
+          </div>
+
+          {event.description && (
+            <p className="mt-1.5 text-sm text-text-secondary line-clamp-2">
+              {event.description}
+            </p>
+          )}
+
+          <div className="mt-3 flex items-center gap-4 text-xs text-text-muted flex-wrap">
+            <span className="flex items-center gap-1">
+              <Clock size={13} />
+              {format(start, "h:mm a")} – {format(end, "h:mm a")}
+            </span>
+            {durationMin > 0 && (
+              <span className="flex items-center gap-1">
+                <Timer size={13} />
+                {durationMin} min
+              </span>
+            )}
+            {event.location && (
+              <span className="flex items-center gap-1">
+                <MapPin size={13} />
+                <span className="truncate max-w-[200px]">{event.location}</span>
+              </span>
+            )}
+            {event.attendees.length > 0 && (
+              <span className="flex items-center gap-1">
+                <Users size={13} />
+                {event.attendees.length}
+              </span>
+            )}
+            {event.html_link && (
+              <a
+                href={event.html_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-accent-500 hover:text-accent-700 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink size={13} />
+                Google Calendar
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className="flex -space-x-1.5 shrink-0">
+          {event.attendees.slice(0, 4).map((a, i) => (
+            <div
+              key={a.email ?? i}
+              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold text-white"
+              style={{
+                background: [
+                  "linear-gradient(135deg, #6366f1, #818cf8)",
+                  "linear-gradient(135deg, #8b5cf6, #a78bfa)",
+                  "linear-gradient(135deg, #06b6d4, #22d3ee)",
+                  "linear-gradient(135deg, #f59e0b, #fbbf24)",
+                ][i % 4],
+              }}
+              title={a.name || a.email || "Attendee"}
+            >
+              {getInitials(a.name || a.email?.split("@")[0] || "?")}
+            </div>
+          ))}
+          {event.attendees.length > 4 && (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-surface-overlay text-[10px] font-semibold text-text-muted">
+              +{event.attendees.length - 4}
             </div>
           )}
         </div>

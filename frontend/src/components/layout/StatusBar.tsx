@@ -74,7 +74,7 @@ export function StatusBar() {
 
   if (isError || !status) {
     return (
-      <div className="border-t border-border bg-surface-raised px-4 py-1.5 flex items-center gap-2 text-xs text-text-muted">
+      <div className="statusbar-gradient border-t border-white/10 px-4 py-1.5 flex items-center gap-2 text-xs text-white/60">
         <XCircle size={12} className="text-red-400" />
         <span>Backend unavailable</span>
       </div>
@@ -86,24 +86,29 @@ export function StatusBar() {
   const lastRun = status.recent_runs[0];
 
   return (
-    <div className="border-t border-border bg-surface-raised">
+    <div className="statusbar-gradient border-t border-white/10">
       {/* Collapsed bar */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-1.5 text-xs hover:bg-surface-overlay transition-colors"
+        className="flex w-full items-center gap-3 px-4 py-1.5 text-xs hover:bg-white/5 transition-colors"
       >
         {/* Activity indicator */}
         <div className="flex items-center gap-1.5">
           {hasActive ? (
             hasStaleRun ? (
-              <AlertTriangle size={12} className="text-amber-500" />
+              <AlertTriangle size={12} className="text-amber-400" />
             ) : (
-              <Loader2 size={12} className="animate-spin text-accent-500" />
+              <Loader2 size={12} className="animate-spin text-accent-300" />
             )
           ) : (
-            <Activity size={12} className="text-emerald-500" />
+            <Activity size={12} className="text-emerald-400" />
           )}
-          <span className={cn("font-medium", hasStaleRun ? "text-amber-600" : "text-text-secondary")}>
+          <span
+            className={cn(
+              "font-medium",
+              hasStaleRun ? "text-amber-300" : "text-white/80"
+            )}
+          >
             {hasActive
               ? hasStaleRun
                 ? `Stale run: ${status.active_runs.map((r) => r.pipeline).join(", ")}`
@@ -112,7 +117,7 @@ export function StatusBar() {
           </span>
         </div>
 
-        <span className="text-border">|</span>
+        <span className="text-white/20">|</span>
 
         {/* Provider status pills */}
         <div className="flex items-center gap-2">
@@ -124,13 +129,13 @@ export function StatusBar() {
                   STATUS_DOT[p.status] || STATUS_DOT.disconnected
                 )}
               />
-              <span className="text-text-muted capitalize">{p.name}</span>
+              <span className="text-white/60 capitalize">{p.name}</span>
               {p.source && (
-                <span className="text-[10px] text-text-muted">
+                <span className="text-[10px]">
                   {p.source === "mcp" ? (
-                    <Cloud size={9} className="inline -mt-px text-accent-400" />
+                    <Cloud size={9} className="inline -mt-px text-accent-300" />
                   ) : (
-                    <Database size={9} className="inline -mt-px" />
+                    <Database size={9} className="inline -mt-px text-white/40" />
                   )}
                 </span>
               )}
@@ -138,11 +143,11 @@ export function StatusBar() {
           ))}
         </div>
 
-        <span className="text-border">|</span>
+        <span className="text-white/20">|</span>
 
         {/* Last run */}
         {lastRun && (
-          <div className="flex items-center gap-1 text-text-muted">
+          <div className="flex items-center gap-1 text-white/50">
             <div
               className={cn(
                 "h-1.5 w-1.5 rounded-full",
@@ -158,8 +163,8 @@ export function StatusBar() {
         {/* Next sync */}
         {status.scheduler.next_sync && (
           <>
-            <span className="text-border">|</span>
-            <div className="flex items-center gap-1 text-text-muted">
+            <span className="text-white/20">|</span>
+            <div className="flex items-center gap-1 text-white/50">
               <Clock size={10} />
               <span>next sync in {timeUntil(status.scheduler.next_sync)}</span>
             </div>
@@ -170,7 +175,7 @@ export function StatusBar() {
           <ChevronUp
             size={12}
             className={cn(
-              "text-text-muted transition-transform",
+              "text-white/40 transition-transform",
               !expanded && "rotate-180"
             )}
           />
@@ -179,17 +184,17 @@ export function StatusBar() {
 
       {/* Expanded detail panel */}
       {expanded && (
-        <div className="border-t border-border px-4 py-3 space-y-3 bg-surface">
+        <div className="border-t border-white/10 px-4 py-3 space-y-3">
           {/* Providers */}
           <div>
-            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">
               Data Sources
             </h4>
             <div className="flex gap-3">
               {status.providers.map((p) => (
                 <div
                   key={p.name}
-                  className="flex items-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-1.5"
+                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5"
                 >
                   <div
                     className={cn(
@@ -197,23 +202,23 @@ export function StatusBar() {
                       STATUS_DOT[p.status] || STATUS_DOT.disconnected
                     )}
                   />
-                  <span className="text-xs font-medium text-text-primary capitalize">
+                  <span className="text-xs font-medium text-white/90 capitalize">
                     {p.name}
                   </span>
                   <span
                     className={cn(
                       "badge text-[10px]",
                       p.status === "healthy"
-                        ? "badge-success"
+                        ? "bg-emerald-500/20 text-emerald-300"
                         : p.status === "degraded"
-                          ? "bg-amber-50 text-amber-600"
-                          : "badge-neutral"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-white/10 text-white/50"
                     )}
                   >
                     {p.status}
                   </span>
                   {p.source && (
-                    <span className="badge badge-info text-[10px] gap-1">
+                    <span className="badge bg-accent-500/20 text-accent-300 text-[10px] gap-1">
                       {p.source === "mcp" ? (
                         <>
                           <Cloud size={8} /> MCP API
@@ -233,7 +238,7 @@ export function StatusBar() {
           {/* Active runs */}
           {status.active_runs.length > 0 && (
             <div>
-              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">
                 Active Pipelines
               </h4>
               <div className="space-y-1">
@@ -246,19 +251,35 @@ export function StatusBar() {
                       className={cn(
                         "flex items-center gap-2 rounded-lg border px-3 py-1.5",
                         isStale
-                          ? "border-amber-300 bg-amber-50"
-                          : "border-accent-200 bg-accent-50",
+                          ? "border-amber-500/30 bg-amber-500/10"
+                          : "border-accent-400/30 bg-accent-500/10"
                       )}
                     >
                       {isStale ? (
-                        <AlertTriangle size={12} className="text-amber-500 shrink-0" />
+                        <AlertTriangle
+                          size={12}
+                          className="text-amber-400 shrink-0"
+                        />
                       ) : (
-                        <Loader2 size={12} className="animate-spin text-accent-500 shrink-0" />
+                        <Loader2
+                          size={12}
+                          className="animate-spin text-accent-300 shrink-0"
+                        />
                       )}
-                      <span className={cn("text-xs font-medium", isStale ? "text-amber-700" : "text-accent-700")}>
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          isStale ? "text-amber-300" : "text-accent-200"
+                        )}
+                      >
                         {run.agent_name}
                       </span>
-                      <span className={cn("text-[10px]", isStale ? "text-amber-600" : "text-accent-500")}>
+                      <span
+                        className={cn(
+                          "text-[10px]",
+                          isStale ? "text-amber-400/80" : "text-accent-300/80"
+                        )}
+                      >
                         {isStale
                           ? `stuck for ${Math.round(elapsed)}m — may need cancelling`
                           : `started ${timeAgo(run.started_at)}`}
@@ -272,8 +293,8 @@ export function StatusBar() {
                         className={cn(
                           "ml-auto flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors",
                           isStale
-                            ? "bg-amber-200 text-amber-800 hover:bg-amber-300"
-                            : "bg-accent-100 text-accent-700 hover:bg-accent-200",
+                            ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                            : "bg-accent-500/20 text-accent-200 hover:bg-accent-500/30"
                         )}
                         title="Cancel this run"
                       >
@@ -288,7 +309,7 @@ export function StatusBar() {
 
           {/* Recent runs */}
           <div>
-            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">
               Recent Activity
             </h4>
             <div className="space-y-1">
@@ -298,42 +319,48 @@ export function StatusBar() {
                   className="flex items-center gap-2 text-xs px-1"
                 >
                   {run.status === "completed" ? (
-                    <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                    <CheckCircle2
+                      size={12}
+                      className="text-emerald-400 shrink-0"
+                    />
                   ) : run.status === "failed" ? (
-                    <AlertTriangle size={12} className="text-red-500 shrink-0" />
+                    <AlertTriangle
+                      size={12}
+                      className="text-red-400 shrink-0"
+                    />
                   ) : (
                     <Loader2
                       size={12}
-                      className="animate-spin text-accent-500 shrink-0"
+                      className="animate-spin text-accent-300 shrink-0"
                     />
                   )}
-                  <span className="font-medium text-text-primary">
+                  <span className="font-medium text-white/80">
                     {run.pipeline}
                   </span>
                   {run.meetings_processed > 0 && (
-                    <span className="text-text-muted">
+                    <span className="text-white/50">
                       {run.meetings_processed} meetings
                     </span>
                   )}
                   {run.errors_count > 0 && (
-                    <span className="text-red-500">
+                    <span className="text-red-400">
                       {run.errors_count} errors
                     </span>
                   )}
                   {run.duration_ms != null && (
-                    <span className="text-text-muted">
+                    <span className="text-white/50">
                       {run.duration_ms > 1000
                         ? `${(run.duration_ms / 1000).toFixed(1)}s`
                         : `${run.duration_ms}ms`}
                     </span>
                   )}
-                  <span className="ml-auto text-text-muted">
+                  <span className="ml-auto text-white/40">
                     {timeAgo(run.started_at)}
                   </span>
                 </div>
               ))}
               {status.recent_runs.length === 0 && (
-                <p className="text-xs text-text-muted px-1">
+                <p className="text-xs text-white/40 px-1">
                   No recent activity
                 </p>
               )}
@@ -341,7 +368,7 @@ export function StatusBar() {
           </div>
 
           {/* Scheduler */}
-          <div className="flex gap-4 text-[11px] text-text-muted">
+          <div className="flex gap-4 text-[11px] text-white/40">
             {status.scheduler.next_sync && (
               <div className="flex items-center gap-1">
                 <RefreshCw size={10} />

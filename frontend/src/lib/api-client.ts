@@ -32,6 +32,31 @@ async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => fetchAPI<{ status: string }>("/api/health"),
+  settings: {
+    list: () =>
+      fetchAPI<{
+        items: Array<{
+          key: string;
+          label: string;
+          value: string;
+          is_secret: boolean;
+          is_set: boolean;
+          source: "database" | "env" | "not_set";
+          help_url?: string;
+          placeholder?: string;
+        }>;
+      }>("/api/settings/"),
+    update: (key: string, value: string) =>
+      fetchAPI<{ key: string; is_set: boolean; message: string }>(
+        `/api/settings/${key}`,
+        { method: "PUT", body: JSON.stringify({ value }) },
+      ),
+    remove: (key: string) =>
+      fetchAPI<{ key: string; message: string }>(`/api/settings/${key}`, {
+        method: "DELETE",
+      }),
+  },
+
   status: () => fetchAPI<SystemStatus>("/api/status/"),
   cancelRun: (runId: string) =>
     fetchAPI<{ status: string; run_id: string }>(
@@ -102,6 +127,16 @@ export const api = {
       fetchAPI<{ entity_id: string; meeting_ids: string[] }>(
         `/api/relationships/${encodeURIComponent(entityId)}/meetings`,
       ),
+    meetingsDetail: (entityId: string) =>
+      fetchAPI<
+        Array<{
+          id: string;
+          title: string;
+          date: string | null;
+          summary_snippet: string | null;
+          attendees: string[];
+        }>
+      >(`/api/relationships/${encodeURIComponent(entityId)}/meetings-detail`),
   },
 
   profiles: {
@@ -111,7 +146,7 @@ export const api = {
       ),
     me: () => fetchAPI<ProfileDetail>("/api/profiles/me"),
     get: (id: string) => fetchAPI<ProfileDetail>(`/api/profiles/${id}`),
-    update: (id: string, data: { name?: string; bio?: string; notes?: string }) =>
+    update: (id: string, data: { name?: string; email?: string; bio?: string; notes?: string }) =>
       fetchAPI<ProfileDetail>(`/api/profiles/${id === "me" ? "me" : id}`, {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -121,6 +156,20 @@ export const api = {
         `/api/profiles/${id}/generate-bio`,
         { method: "POST" },
       ),
+    addAlias: (id: string, email: string) =>
+      fetchAPI<ProfileDetail>(`/api/profiles/${id}/aliases`, {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
+    removeAlias: (id: string, email: string) =>
+      fetchAPI<ProfileDetail>(
+        `/api/profiles/${id}/aliases/${encodeURIComponent(email)}`,
+        { method: "DELETE" },
+      ),
+    merge: (id: string, otherId: string) =>
+      fetchAPI<ProfileDetail>(`/api/profiles/${id}/merge/${otherId}`, {
+        method: "POST",
+      }),
   },
 
   calendar: {
@@ -132,6 +181,14 @@ export const api = {
       fetchAPI<CalendarEvent>(`/api/calendar/events/${eventId}`),
     sync: () =>
       fetchAPI<{ message: string }>("/api/calendar/sync", { method: "POST" }),
+    generateBriefing: (eventId: string) =>
+      fetchAPI<{
+        status: string;
+        briefing: { id: string; content: string; topics: string[] | null };
+        similar_meetings: { id: string; title: string; date: string }[];
+      }>(`/api/calendar/events/${eventId}/generate-briefing`, {
+        method: "POST",
+      }),
   },
 
   actionItems: {

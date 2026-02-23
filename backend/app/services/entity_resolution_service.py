@@ -73,9 +73,12 @@ class EntityResolutionService:
                     "name": profile.name,
                     "type": profile.type,
                 }
+            return None
 
+        # Name-only match — only for non-person entities like orgs
         stmt = select(Profile).where(
-            func.lower(Profile.name) == name.lower()
+            func.lower(Profile.name) == name.lower(),
+            Profile.type == "org",
         )
         result = await self.session.execute(stmt)
         profile = result.scalar_one_or_none()

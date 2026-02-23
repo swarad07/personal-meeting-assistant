@@ -68,6 +68,24 @@ class GranolaMCPProvider(BaseMCPProvider):
         self._client_id = credentials.get("client_id", self._client_id)
 
         try:
+            await self._discover_oauth()
+        except Exception:
+            logger.warning("OAuth discovery failed during connect; will try initialize anyway")
+
+        if self._token_expires_at and time.time() > self._token_expires_at - 60:
+            if self._refresh_token_value:
+                logger.info("Access token expired, attempting refresh before initialize")
+                refreshed = await self.refresh_token(self._refresh_token_value)
+                if not refreshed:
+                    logger.warning("Token refresh failed during connect")
+                    self._connected = False
+                    return False
+            else:
+                logger.warning("Token expired and no refresh_token available")
+                self._connected = False
+                return False
+
+        try:
             result = await self._jsonrpc_call("initialize", {
                 "protocolVersion": _MCP_PROTOCOL_VERSION,
                 "capabilities": {},
@@ -80,6 +98,19 @@ class GranolaMCPProvider(BaseMCPProvider):
             logger.exception("Granola MCP connection verification failed")
             self._connected = False
             return False
+
+    def get_current_tokens(self) -> dict[str, Any]:
+        """Return the current token state for persistence after refresh."""
+        tokens: dict[str, Any] = {}
+        if self._access_token:
+            tokens["access_token"] = self._access_token
+        if self._refresh_token_value:
+            tokens["refresh_token"] = self._refresh_token_value
+        if self._token_expires_at:
+            tokens["expires_at"] = self._token_expires_at
+        if self._client_id:
+            tokens["client_id"] = self._client_id
+        return tokens
 
     async def disconnect(self) -> bool:
         self._access_token = None
@@ -150,7 +181,7 @@ class GranolaMCPProvider(BaseMCPProvider):
             "redirect_uri": redirect_uri,
             "code_challenge": code_challenge,
             "code_challenge_method": "S256",
-            "scope": "openid",
+            "scope": "openid email profile offline_access",
             "state": "granola",
         }
         return f"{self._authorization_endpoint}?{urlencode(params)}"
@@ -177,12 +208,22 @@ class GranolaMCPProvider(BaseMCPProvider):
         self._code_verifier = None
 
         expires_in = data.get("expires_in", 3600)
-        return {
+        result_tokens: dict[str, Any] = {
             "access_token": data["access_token"],
             "refresh_token": data.get("refresh_token"),
             "expires_at": time.time() + expires_in,
             "client_id": self._client_id,
         }
+
+        id_token = data.get("id_token")
+        if id_token:
+            claims = self._decode_id_token(id_token)
+            if claims.get("email"):
+                result_tokens["user_email"] = claims["email"]
+            if claims.get("name"):
+                result_tokens["user_name"] = claims["name"]
+
+        return result_tokens
 
     async def refresh_token(self, refresh_tok: str) -> dict[str, Any] | None:
         if not self._token_endpoint or not self._client_id:
@@ -306,6 +347,22 @@ class GranolaMCPProvider(BaseMCPProvider):
                 if not refreshed:
                     logger.warning("Token refresh failed; token may be expired")
 
+    @staticmethod
+    def _decode_id_token(token: str) -> dict[str, Any]:
+        """Decode JWT id_token payload without signature verification."""
+        import json
+        from base64 import urlsafe_b64decode
+
+        try:
+            payload_b64 = token.split(".")[1]
+            padding = 4 - len(payload_b64) % 4
+            if padding != 4:
+                payload_b64 += "=" * padding
+            return json.loads(urlsafe_b64decode(payload_b64))
+        except Exception:
+            logger.debug("Failed to decode id_token")
+            return {}
+
     # ── XML response parsing ─────────────────────────────────────
 
     def _parse_xml_response(self, internal_name: str, text: str) -> Any:
@@ -415,20 +472,22 @@ class GranolaMCPProvider(BaseMCPProvider):
         """Map our internal tool names to Granola MCP tool names."""
         if internal_name == "list-documents":
             mcp_params: dict[str, Any] = {}
-            if params.get("limit"):
-                mcp_params["limit"] = params["limit"]
-            if params.get("since"):
-                mcp_params["since"] = params["since"]
+            if params.get("time_range"):
+                mcp_params["time_range"] = params["time_range"]
+            if params.get("custom_start"):
+                mcp_params["custom_start"] = params["custom_start"]
+            if params.get("custom_end"):
+                mcp_params["custom_end"] = params["custom_end"]
             return ("list_meetings", mcp_params)
 
         if internal_name == "get-document":
-            return ("get_meetings", {"meetingId": params["documentId"]})
+            return ("get_meetings", {"meeting_ids": [params["documentId"]]})
 
         if internal_name == "get-transcript":
-            return ("get_meeting_transcript", {"meetingId": params["documentId"]})
+            return ("get_meeting_transcript", {"meeting_id": params["documentId"]})
 
         if internal_name == "list-people":
-            return ("list_meetings", {"limit": 100})
+            return ("list_meetings", {})
 
         return (internal_name, params)
 

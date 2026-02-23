@@ -76,21 +76,14 @@ async def ensure_attendee_profiles() -> dict[str, Any]:
                     res = await session.execute(stmt)
                     profile = res.scalar_one_or_none()
 
-                if not profile:
-                    stmt = select(Profile).where(func.lower(Profile.name) == name.lower())
-                    res = await session.execute(stmt)
-                    profile = res.scalar_one_or_none()
-
                 if profile:
                     traits = profile.traits or {}
                     traits["meeting_count"] = meeting_count
                     traits["last_seen"] = last_seen.isoformat() if last_seen else None
                     traits["first_seen"] = first_seen.isoformat() if first_seen else None
                     profile.traits = traits
-                    if email and not profile.email:
-                        profile.email = email
                     updated += 1
-                else:
+                elif email:
                     profile = Profile(
                         id=uuid.uuid4(),
                         type="contact",

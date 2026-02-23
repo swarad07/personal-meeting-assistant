@@ -58,8 +58,8 @@ async def get_system_status(
             "pipeline": r.pipeline,
             "agent_name": r.agent_name,
             "status": r.status,
-            "started_at": r.started_at.isoformat(),
-            "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+            "started_at": r.started_at.isoformat() + "Z",
+            "completed_at": r.completed_at.isoformat() + "Z" if r.completed_at else None,
             "duration_ms": r.duration_ms,
             "meetings_processed": r.meetings_processed,
             "errors_count": r.errors_count,
@@ -97,7 +97,7 @@ async def get_system_status(
             "id": str(r.id),
             "pipeline": r.pipeline,
             "agent_name": r.agent_name,
-            "started_at": r.started_at.isoformat(),
+            "started_at": r.started_at.isoformat() + "Z",
             "elapsed_minutes": round(elapsed_minutes, 1),
         })
 
@@ -120,7 +120,7 @@ async def get_system_status(
             "next_briefing": next_briefing,
         },
         "stale_timeout_minutes": STALE_RUN_TIMEOUT_MINUTES,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 

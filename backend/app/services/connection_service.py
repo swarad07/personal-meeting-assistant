@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.mcp.base import ProviderStatus
 from app.mcp.registry import MCPRegistry
+from app.models.app_setting import AppSetting
 from app.models.connection import MCPConnection
+from app.models.profile import Profile
 from app.services.encryption_service import decrypt_tokens, encrypt_tokens
 
 logger = logging.getLogger(__name__)
@@ -65,6 +68,13 @@ class ConnectionService:
             conn.last_error = "Connection failed after token exchange"
 
         await self.session.flush()
+
+        if connected and provider_name == "granola":
+            user_email = tokens.get("user_email")
+            user_name = tokens.get("user_name")
+            if user_email:
+                await self._persist_primary_user(user_email, user_name)
+
         return connected
 
     async def connect_with_tokens(
@@ -114,6 +124,8 @@ class ConnectionService:
 
     async def restore_connections(self) -> None:
         """Restore provider connections from stored tokens on startup."""
+        from app.config import settings as app_cfg
+
         stmt = select(MCPConnection).where(MCPConnection.status == "connected")
         result = await self.session.execute(stmt)
         connections = result.scalars().all()
@@ -128,6 +140,23 @@ class ConnectionService:
                 if not connected:
                     conn.status = "error"
                     conn.last_error = "Failed to restore connection on startup"
+                else:
+                    # Persist refreshed tokens back to DB
+                    mcp_sub = getattr(provider, "mcp_provider", None)
+                    if mcp_sub and hasattr(mcp_sub, "get_current_tokens"):
+                        fresh_tokens = mcp_sub.get_current_tokens()
+                        if fresh_tokens.get("access_token"):
+                            for key in ("user_email", "user_name"):
+                                if key in tokens:
+                                    fresh_tokens[key] = tokens[key]
+                            conn.oauth_tokens = encrypt_tokens(fresh_tokens)
+                            logger.info("Persisted refreshed tokens for %s", conn.provider)
+
+                    if conn.provider == "granola" and not app_cfg.primary_user_email:
+                        user_email = tokens.get("user_email")
+                        user_name = tokens.get("user_name")
+                        if user_email:
+                            await self._persist_primary_user(user_email, user_name)
             except KeyError:
                 logger.warning("Provider '%s' not registered, skipping restore", conn.provider)
             except Exception:
@@ -155,3 +184,77 @@ class ConnectionService:
             self.session.add(conn)
             await self.session.flush()
         return conn
+
+    async def _persist_primary_user(self, email: str, name: str | None) -> None:
+        """Store primary_user_email in app_settings and ensure self profile."""
+        from app.config import settings as app_cfg
+
+        email_lower = email.lower()
+
+        for key, value in [("primary_user_email", email_lower), ("primary_user_name", name or "")]:
+            if not value:
+                continue
+            stmt = select(AppSetting).where(AppSetting.key == key)
+            result = await self.session.execute(stmt)
+            row = result.scalar_one_or_none()
+            if row:
+                row.value = value
+            else:
+                self.session.add(AppSetting(key=key, value=value, is_secret=False))
+            setattr(app_cfg, key, value)
+
+        await self._ensure_self_profile(email_lower, name)
+        await self.session.flush()
+        logger.info("Primary user set to %s (%s)", email_lower, name or "no name")
+
+    async def _ensure_self_profile(self, email: str, name: str | None) -> None:
+        """Guarantee exactly one Profile(type='self') with the given email."""
+        # Check if a profile with this email already exists
+        stmt = select(Profile).where(func.lower(Profile.email) == email)
+        result = await self.session.execute(stmt)
+        existing = result.scalar_one_or_none()
+
+        # Find any current self profile
+        stmt = select(Profile).where(Profile.type == "self")
+        result = await self.session.execute(stmt)
+        current_self = result.scalar_one_or_none()
+
+        if existing and existing.type == "self":
+            if name and (existing.name == "Me" or not existing.name):
+                existing.name = name
+            return
+
+        if existing:
+            existing.type = "self"
+            if name and not existing.name:
+                existing.name = name
+            if current_self and current_self.id != existing.id:
+                current_self.type = "contact"
+            return
+
+        if current_self:
+            if current_self.email and current_self.email.lower() != email:
+                current_self.type = "contact"
+                self.session.add(Profile(
+                    id=uuid.uuid4(),
+                    type="self",
+                    name=name or "Me",
+                    email=email,
+                    bio="Your personal profile. Enriched as you use the system.",
+                    traits={"meeting_count": 0},
+                    learning_log=[],
+                ))
+            else:
+                current_self.email = email
+                if name and (current_self.name == "Me" or not current_self.name):
+                    current_self.name = name
+        else:
+            self.session.add(Profile(
+                id=uuid.uuid4(),
+                type="self",
+                name=name or "Me",
+                email=email,
+                bio="Your personal profile. Enriched as you use the system.",
+                traits={"meeting_count": 0},
+                learning_log=[],
+            ))

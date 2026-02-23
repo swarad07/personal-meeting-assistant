@@ -108,20 +108,22 @@ export default function ProfileDetailPage({
             )}
           </div>
         </div>
-        {profile.type !== "self" && (
-          <button
-            onClick={() => bioMutation.mutate()}
-            disabled={bioMutation.isPending}
-            className="flex items-center gap-1.5 rounded-xl gradient-bg px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-accent-500/25 shrink-0"
-          >
-            {bioMutation.isPending ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Sparkles size={14} />
-            )}
-            {profile.bio ? "Regenerate Bio" : "Generate Bio"}
-          </button>
-        )}
+        <div className="flex flex-col gap-2 shrink-0">
+          {profile.type !== "self" && (
+            <button
+              onClick={() => bioMutation.mutate()}
+              disabled={bioMutation.isPending}
+              className="flex items-center gap-1.5 rounded-xl gradient-bg px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-accent-500/25"
+            >
+              {bioMutation.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Sparkles size={14} />
+              )}
+              {profile.bio ? "Regenerate Bio" : "Generate Bio"}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

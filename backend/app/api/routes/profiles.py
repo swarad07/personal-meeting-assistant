@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db_session
@@ -15,8 +15,13 @@ router = APIRouter()
 
 class ProfileUpdate(BaseModel):
     name: str | None = None
+    email: str | None = None
     bio: str | None = None
     notes: str | None = None
+
+
+class AliasBody(BaseModel):
+    email: str
 
 
 @router.get("/")
@@ -42,7 +47,8 @@ async def list_profiles(
 
     items = []
     for p in profiles:
-        meeting_count = await _get_meeting_count(session, p.name)
+        count_stmt = select(func.count()).select_from(Attendee).where(_attendee_filter(p))
+        meeting_count = (await session.execute(count_stmt)).scalar() or 0
         items.append({
             "id": str(p.id),
             "type": p.type,
@@ -50,6 +56,7 @@ async def list_profiles(
             "email": p.email,
             "bio": p.bio,
             "traits": p.traits,
+            "aliases": p.aliases,
             "meeting_count": meeting_count,
         })
 
@@ -108,6 +115,8 @@ async def update_own_profile(
 
     if body.name is not None:
         profile.name = body.name
+    if body.email is not None:
+        profile.email = body.email
     if body.bio is not None:
         profile.bio = body.bio
     if body.notes is not None:
@@ -163,13 +172,161 @@ async def update_profile(
     return await _profile_detail(session, profile)
 
 
+@router.post("/{profile_id}/aliases")
+async def add_alias(
+    profile_id: str,
+    body: AliasBody,
+    session: AsyncSession = Depends(get_db_session),
+):
+    stmt = select(Profile).where(Profile.id == profile_id)
+    result = await session.execute(stmt)
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    alias_email = body.email.strip().lower()
+    if not alias_email:
+        raise HTTPException(status_code=400, detail="Email cannot be empty")
+
+    conflict = await session.execute(
+        select(Profile).where(func.lower(Profile.email) == alias_email)
+    )
+    if conflict.scalar_one_or_none():
+        raise HTTPException(
+            status_code=409,
+            detail="This email is already a primary email on another profile. Use merge instead.",
+        )
+
+    all_aliases = await session.execute(
+        select(Profile).where(Profile.aliases.contains([alias_email]))
+    )
+    if all_aliases.scalar_one_or_none():
+        raise HTTPException(
+            status_code=409,
+            detail="This email is already an alias on another profile.",
+        )
+
+    if profile.email and profile.email.lower() == alias_email:
+        raise HTTPException(status_code=409, detail="This is already the primary email.")
+
+    aliases = list(profile.aliases or [])
+    if alias_email in aliases:
+        raise HTTPException(status_code=409, detail="This alias already exists.")
+
+    aliases.append(alias_email)
+    profile.aliases = aliases
+    await session.flush()
+
+    return await _profile_detail(session, profile)
+
+
+@router.delete("/{profile_id}/aliases/{alias_email}")
+async def remove_alias(
+    profile_id: str,
+    alias_email: str,
+    session: AsyncSession = Depends(get_db_session),
+):
+    stmt = select(Profile).where(Profile.id == profile_id)
+    result = await session.execute(stmt)
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    aliases = list(profile.aliases or [])
+    normalized = alias_email.strip().lower()
+    if normalized not in aliases:
+        raise HTTPException(status_code=404, detail="Alias not found on this profile")
+
+    aliases.remove(normalized)
+    profile.aliases = aliases if aliases else None
+    await session.flush()
+
+    return await _profile_detail(session, profile)
+
+
+@router.post("/{profile_id}/merge/{other_id}")
+async def merge_profiles(
+    profile_id: str,
+    other_id: str,
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Merge other_id profile into profile_id. The other profile is deleted."""
+    if profile_id == other_id:
+        raise HTTPException(status_code=400, detail="Cannot merge a profile with itself")
+
+    primary = (await session.execute(
+        select(Profile).where(Profile.id == profile_id)
+    )).scalar_one_or_none()
+    if not primary:
+        raise HTTPException(status_code=404, detail="Primary profile not found")
+
+    other = (await session.execute(
+        select(Profile).where(Profile.id == other_id)
+    )).scalar_one_or_none()
+    if not other:
+        raise HTTPException(status_code=404, detail="Profile to merge not found")
+
+    aliases = list(primary.aliases or [])
+
+    if other.email and other.email.lower() not in aliases:
+        if not primary.email or primary.email.lower() != other.email.lower():
+            aliases.append(other.email.lower())
+
+    for a in (other.aliases or []):
+        if a not in aliases and (not primary.email or primary.email.lower() != a):
+            aliases.append(a)
+
+    primary.aliases = aliases if aliases else None
+
+    primary_traits = dict(primary.traits or {})
+    other_traits = dict(other.traits or {})
+    other_mc = other_traits.pop("meeting_count", 0) or 0
+    primary_mc = primary_traits.get("meeting_count", 0) or 0
+    primary_traits["meeting_count"] = primary_mc + other_mc
+    for k, v in other_traits.items():
+        if k not in primary_traits:
+            primary_traits[k] = v
+    primary.traits = primary_traits
+
+    if not primary.bio and other.bio:
+        primary.bio = other.bio
+
+    primary_log = list(primary.learning_log or [])
+    other_log = list(other.learning_log or [])
+    primary_log.extend(other_log)
+    primary.learning_log = primary_log if primary_log else None
+
+    update_stmt = (
+        Attendee.__table__.update()
+        .where(func.lower(Attendee.name) == other.name.lower())
+        .values(name=primary.name)
+    )
+    await session.execute(update_stmt)
+
+    if other.email:
+        update_email_stmt = (
+            Attendee.__table__.update()
+            .where(func.lower(Attendee.email) == other.email.lower())
+            .values(name=primary.name)
+        )
+        await session.execute(update_email_stmt)
+
+    await session.delete(other)
+    await session.flush()
+
+    return await _profile_detail(session, primary)
+
+
 async def _profile_detail(session: AsyncSession, profile: Profile) -> dict[str, Any]:
-    meeting_count = await _get_meeting_count(session, profile.name)
+    attendee_filter = _attendee_filter(profile)
+
+    count_stmt = select(func.count()).select_from(Attendee).where(attendee_filter)
+    meeting_count = (await session.execute(count_stmt)).scalar() or 0
 
     recent_stmt = (
         select(Meeting)
         .join(Attendee)
-        .where(func.lower(Attendee.name) == profile.name.lower())
+        .where(attendee_filter)
         .order_by(Meeting.date.desc())
         .limit(10)
     )
@@ -216,6 +373,7 @@ async def _profile_detail(session: AsyncSession, profile: Profile) -> dict[str, 
         "bio": profile.bio,
         "notes": profile.notes,
         "traits": profile.traits,
+        "aliases": profile.aliases,
         "learning_log": learning_log[-20:],
         "meeting_count": meeting_count,
         "recent_meetings": recent_meetings,
@@ -223,10 +381,8 @@ async def _profile_detail(session: AsyncSession, profile: Profile) -> dict[str, 
     }
 
 
-async def _get_meeting_count(session: AsyncSession, name: str) -> int:
-    stmt = (
-        select(func.count())
-        .select_from(Attendee)
-        .where(func.lower(Attendee.name) == name.lower())
-    )
-    return (await session.execute(stmt)).scalar() or 0
+def _attendee_filter(profile: Profile):
+    """Build a SQLAlchemy where-clause matching attendees by email (preferred) or name."""
+    if profile.email:
+        return func.lower(Attendee.email) == profile.email.lower()
+    return func.lower(Attendee.name) == profile.name.lower()

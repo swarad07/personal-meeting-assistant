@@ -45,7 +45,7 @@ export default function OAuthCallbackPage() {
         if (result.connected) {
           setStatus("success");
           setMessage(`${provider} connected successfully!`);
-          setTimeout(() => router.push("/settings/connections"), 2000);
+          setTimeout(() => router.push("/settings"), 2000);
         } else {
           setStatus("error");
           setMessage(`Failed to connect ${provider}. Please try again.`);
@@ -83,7 +83,7 @@ export default function OAuthCallbackPage() {
             </h2>
             <p className="mt-2 text-sm text-text-secondary">{message}</p>
             <p className="mt-4 text-xs text-text-muted">
-              Redirecting to connections...
+              Redirecting to settings...
             </p>
           </>
         )}
@@ -96,7 +96,7 @@ export default function OAuthCallbackPage() {
             </h2>
             <p className="mt-2 text-sm text-text-secondary">{message}</p>
             <button
-              onClick={() => router.push("/settings/connections")}
+              onClick={() => router.push("/settings")}
               className="mt-6 rounded-xl gradient-bg px-6 py-2 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-lg shadow-accent-500/25"
             >
               Back to Connections

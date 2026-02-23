@@ -18,6 +18,7 @@ class Profile(TimestampMixin, Base):
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     traits: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    aliases: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     learning_log: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     embedding = mapped_column(Vector(1536), nullable=True)
 
