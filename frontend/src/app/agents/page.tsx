@@ -45,103 +45,113 @@ export default function AgentsPage() {
 
       {agents && (
         <div className="space-y-4">
-          {agents.map((agent) => (
-            <div key={agent.name} className="glass-card p-6">
-              <div className="flex items-start justify-between gap-4">
-                <Link
-                  href={`/agents/${agent.name}`}
-                  className="min-w-0 flex-1 group"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-bg">
-                      <Bot size={16} className="text-white" />
-                    </div>
-                    <h2 className="text-base font-semibold text-text-primary group-hover:text-accent-600 transition-colors">
-                      {agent.name.replace(/_/g, " ")}
-                    </h2>
-                    <span className="badge badge-info">{agent.pipeline}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-text-secondary">
-                    {agent.description}
-                  </p>
+          {agents.map((agent, i) => {
+            const iconVariants = ["icon-box-indigo", "icon-box-violet", "icon-box-cyan", "icon-box-emerald", "icon-box-amber", "icon-box-rose"] as const;
+            const iconClass = iconVariants[i % iconVariants.length];
 
-                  <div className="mt-3 flex items-center gap-4 text-xs text-text-muted">
-                    {agent.dependencies.length > 0 && (
-                      <span>
-                        Depends on:{" "}
-                        {agent.dependencies
-                          .map((d) => d.replace(/_/g, " "))
-                          .join(", ")}
-                      </span>
-                    )}
-                    {agent.required_mcp_providers.length > 0 && (
-                      <span>
-                        Requires: {agent.required_mcp_providers.join(", ")}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-text-primary">
-                        {agent.total_runs}
-                        <span className="text-xs font-normal text-text-muted ml-1">
-                          runs
-                        </span>
+            return (
+              <div key={agent.name} className="glass-card card-accent card-accent-visible overflow-hidden p-6 pl-7">
+                <div className="flex items-start justify-between gap-4">
+                  <Link
+                    href={`/agents/${agent.name}`}
+                    className="min-w-0 flex-1 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`icon-box icon-box-sm ${iconClass}`}>
+                        <Bot size={16} />
                       </div>
-                      {agent.success_rate !== null && (
-                        <div className="flex items-center gap-1 text-xs justify-end">
-                          {agent.success_rate >= 0.9 ? (
-                            <CheckCircle size={12} className="text-emerald-500" />
-                          ) : (
-                            <AlertCircle size={12} className="text-amber-500" />
-                          )}
-                          <span className="text-text-secondary">
-                            {Math.round(agent.success_rate * 100)}% success
+                      <h2 className="text-base font-semibold text-text-primary group-hover:text-accent-600 transition-colors capitalize">
+                        {agent.name.replace(/_/g, " ")}
+                      </h2>
+                      <span className="badge badge-violet">{agent.pipeline}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-text-secondary ml-11">
+                      {agent.description}
+                    </p>
+
+                    <div className="mt-2.5 ml-11 flex items-center gap-4 text-xs text-text-muted">
+                      {agent.dependencies.length > 0 && (
+                        <span>
+                          Depends on:{" "}
+                          {agent.dependencies
+                            .map((d) => d.replace(/_/g, " "))
+                            .join(", ")}
+                        </span>
+                      )}
+                      {agent.required_mcp_providers.length > 0 && (
+                        <span>
+                          Requires: {agent.required_mcp_providers.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-text-primary">
+                          {agent.total_runs}
+                          <span className="text-xs font-normal text-text-muted ml-1">
+                            runs
                           </span>
                         </div>
+                        {agent.success_rate !== null && (
+                          <div className="flex items-center gap-1 text-xs justify-end">
+                            {agent.success_rate >= 0.9 ? (
+                              <CheckCircle size={12} className="text-emerald-500" />
+                            ) : (
+                              <AlertCircle size={12} className="text-amber-500" />
+                            )}
+                            <span className="text-text-secondary">
+                              {Math.round(agent.success_rate * 100)}% success
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {agent.can_trigger && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            triggerMutation.mutate(agent.name);
+                          }}
+                          disabled={triggerMutation.isPending}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl gradient-bg text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-accent-500/20"
+                          title={`Run ${agent.name.replace(/_/g, " ")}`}
+                        >
+                          {triggerMutation.isPending ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <Play size={16} />
+                          )}
+                        </button>
                       )}
                     </div>
 
-                    {agent.can_trigger && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          triggerMutation.mutate(agent.name);
-                        }}
-                        disabled={triggerMutation.isPending}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-500 hover:bg-accent-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                        title={`Run ${agent.name.replace(/_/g, " ")}`}
-                      >
-                        {triggerMutation.isPending ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Play size={16} />
-                        )}
-                      </button>
+                    {agent.last_run && (
+                      <div className="flex items-center gap-1 text-xs text-text-muted">
+                        <Clock size={11} className="text-accent-400" />
+                        {agent.last_run.duration_ms
+                          ? `${(agent.last_run.duration_ms / 1000).toFixed(1)}s`
+                          : "—"}
+                      </div>
                     )}
                   </div>
-
-                  {agent.last_run && (
-                    <div className="flex items-center gap-1 text-xs text-text-muted">
-                      <Clock size={11} />
-                      {agent.last_run.duration_ms
-                        ? `${(agent.last_run.duration_ms / 1000).toFixed(1)}s`
-                        : "—"}
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {agents.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
-              <Bot className="mx-auto h-10 w-10 text-text-muted" />
-              <p className="mt-3 text-sm text-text-muted">
-                No agents registered yet.
+            <div className="empty-state">
+              <div className="icon-box icon-box-lg icon-box-indigo mx-auto">
+                <Bot size={22} />
+              </div>
+              <p className="mt-4 text-sm font-medium text-text-secondary">
+                No agents registered yet
+              </p>
+              <p className="mt-1 text-xs text-text-muted">
+                Agents will appear here once the system is configured.
               </p>
             </div>
           )}

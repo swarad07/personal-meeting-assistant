@@ -286,43 +286,54 @@ export default function MyProfilePage() {
         )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {contacts.map((contact, i) => (
-            <Link
-              key={contact.id}
-              href={`/profiles/${contact.id}`}
-              className="glass-card p-4"
-            >
-              <div className="flex items-start gap-3">
+          {contacts.map((contact, i) => {
+            const gradient = [
+              "linear-gradient(135deg, #6366f1, #818cf8)",
+              "linear-gradient(135deg, #8b5cf6, #a78bfa)",
+              "linear-gradient(135deg, #06b6d4, #22d3ee)",
+              "linear-gradient(135deg, #f59e0b, #fbbf24)",
+              "linear-gradient(135deg, #ec4899, #f472b6)",
+              "linear-gradient(135deg, #10b981, #34d399)",
+            ][i % 6];
+
+            return (
+              <Link
+                key={contact.id}
+                href={`/profiles/${contact.id}`}
+                className="glass-card overflow-hidden group"
+              >
                 <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                  style={{
-                    background: [
-                      "linear-gradient(135deg, #6366f1, #818cf8)",
-                      "linear-gradient(135deg, #8b5cf6, #a78bfa)",
-                      "linear-gradient(135deg, #06b6d4, #22d3ee)",
-                      "linear-gradient(135deg, #f59e0b, #fbbf24)",
-                    ][i % 4],
-                  }}
-                >
-                  {getInitials(contact.name)}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">
-                    {contact.name}
-                  </p>
-                  {contact.bio && (
-                    <p className="text-xs text-text-muted truncate">{contact.bio}</p>
-                  )}
-                  <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
-                    <span className="flex items-center gap-0.5">
-                      <MessageSquare size={10} />
-                      {contact.meeting_count} meetings
-                    </span>
+                  className="h-1.5 w-full"
+                  style={{ background: gradient }}
+                />
+                <div className="p-4 flex items-start gap-3">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white shadow-sm"
+                    style={{ background: gradient }}
+                  >
+                    {getInitials(contact.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary truncate group-hover:text-accent-600 transition-colors">
+                      {contact.name}
+                    </p>
+                    {contact.email && (
+                      <p className="text-[11px] text-text-muted truncate">{contact.email}</p>
+                    )}
+                    {contact.bio && !contact.email && (
+                      <p className="text-[11px] text-text-muted truncate">{contact.bio}</p>
+                    )}
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
+                      <span className="flex items-center gap-0.5">
+                        <MessageSquare size={10} className="text-accent-400" />
+                        {contact.meeting_count} meetings
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Infinite scroll sentinel */}

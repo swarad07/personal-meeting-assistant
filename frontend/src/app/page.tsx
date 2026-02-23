@@ -99,13 +99,13 @@ export default function DashboardPage() {
                 <li key={m.id}>
                   <Link
                     href={`/meetings/${m.id}`}
-                    className="block rounded-xl p-3 hover:bg-accent-50/50 transition-colors"
+                    className="block rounded-xl p-3 hover:bg-accent-50/50 transition-colors border-l-2 border-transparent hover:border-accent-400"
                   >
                     <p className="text-sm font-medium text-text-primary truncate">
                       {m.title}
                     </p>
                     <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
-                      <Clock size={11} />
+                      <Clock size={11} className="text-accent-400" />
                       {formatDistanceToNow(new Date(m.date), { addSuffix: true })}
                       {m.duration && ` · ${m.duration} min`}
                     </p>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
           {actionItems?.items.length ? (
             <ul className="space-y-2">
               {actionItems.items.slice(0, 5).map((ai) => (
-                <li key={ai.id} className="flex items-start gap-3 p-2 rounded-xl hover:bg-accent-50/50 transition-colors">
+                <li key={ai.id} className="flex items-start gap-3 p-2 rounded-xl hover:bg-accent-50/50 transition-colors border-l-2 border-transparent hover:border-amber-400">
                   <div className="mt-0.5 h-4 w-4 shrink-0 rounded-md border-2 border-accent-300" />
                   <div className="min-w-0">
                     <p className="text-sm text-text-primary">{ai.description}</p>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
           {connections?.length ? (
             <ul className="space-y-2">
               {connections.map((c) => (
-                <li key={c.provider} className="flex items-center justify-between p-3 rounded-xl hover:bg-accent-50/50 transition-colors">
+                <li key={c.provider} className="flex items-center justify-between p-3 rounded-xl hover:bg-accent-50/50 transition-colors border-l-2 border-transparent hover:border-cyan-400">
                   <div>
                     <p className="text-sm font-medium text-text-primary capitalize">
                       {c.provider}
@@ -208,7 +208,7 @@ export default function DashboardPage() {
           {agents?.length ? (
             <ul className="space-y-2">
               {agents.map((a) => (
-                <li key={a.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-accent-50/50 transition-colors">
+                <li key={a.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-accent-50/50 transition-colors border-l-2 border-transparent hover:border-violet-400">
                   <div>
                     <p className="text-sm font-medium text-text-primary">
                       {a.name.replace(/_/g, " ")}

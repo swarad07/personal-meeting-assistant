@@ -90,25 +90,17 @@ export default function MeetingsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 rounded-2xl bg-surface-overlay p-1 mb-6 w-fit">
+      <div className="tab-pills mb-6">
         <button
           onClick={() => setActiveTab("past")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === "past"
-              ? "bg-white text-text-primary shadow-sm"
-              : "text-text-muted hover:text-text-secondary"
-          }`}
+          className={`tab-pill ${activeTab === "past" ? "tab-pill-active" : ""}`}
         >
           <History size={14} />
           Past Meetings
         </button>
         <button
           onClick={() => setActiveTab("upcoming")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === "upcoming"
-              ? "bg-white text-text-primary shadow-sm"
-              : "text-text-muted hover:text-text-secondary"
-          }`}
+          className={`tab-pill ${activeTab === "upcoming" ? "tab-pill-active" : ""}`}
         >
           <CalendarDays size={14} />
           Upcoming
@@ -197,16 +189,16 @@ function PastMeetings() {
         <div className="space-y-8">
           {dateGroups.map((group) => (
             <section key={group.date}>
-              <div className="py-2">
-                <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">
+              <div className="section-header py-2">
+                <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   {group.label}
-                  <span className="ml-2 text-xs font-normal normal-case">
-                    ({group.meetings.length} meeting{group.meetings.length !== 1 && "s"})
+                  <span className="ml-2 font-normal normal-case text-text-muted/70">
+                    ({group.meetings.length})
                   </span>
                 </h2>
               </div>
 
-              <div className="space-y-2 mt-2">
+              <div className="space-y-2.5 mt-3">
                 {group.meetings.map((meeting) => (
                   <MeetingCard key={meeting.id} meeting={meeting} />
                 ))}
@@ -217,10 +209,15 @@ function PastMeetings() {
       )}
 
       {allMeetings.length === 0 && !isLoading && !error && (
-        <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
-          <MessageSquare className="mx-auto h-10 w-10 text-text-muted" />
-          <p className="mt-3 text-sm text-text-muted">
-            No meetings yet. Connect Granola to start syncing.
+        <div className="empty-state">
+          <div className="icon-box icon-box-lg icon-box-indigo mx-auto">
+            <MessageSquare size={22} />
+          </div>
+          <p className="mt-4 text-sm font-medium text-text-secondary">
+            No meetings yet
+          </p>
+          <p className="mt-1 text-xs text-text-muted">
+            Connect Granola to start syncing your meetings.
           </p>
         </div>
       )}
@@ -271,16 +268,12 @@ function UpcomingMeetings() {
         </p>
 
         {!isDisconnected && (
-          <div className="flex items-center gap-1 rounded-xl bg-surface-overlay p-0.5">
+          <div className="tab-pills">
             {DAY_OPTIONS.map((opt) => (
               <button
                 key={opt}
                 onClick={() => setDays(opt)}
-                className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${
-                  days === opt
-                    ? "bg-white text-text-primary shadow-sm"
-                    : "text-text-muted hover:text-text-secondary"
-                }`}
+                className={`tab-pill !px-3 !py-1.5 !text-xs ${days === opt ? "tab-pill-active" : ""}`}
               >
                 {opt}d
               </button>
@@ -298,9 +291,11 @@ function UpcomingMeetings() {
       )}
 
       {isDisconnected && (
-        <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
-          <CalendarOff className="mx-auto h-10 w-10 text-text-muted" />
-          <p className="mt-3 text-sm font-medium text-text-secondary">
+        <div className="empty-state">
+          <div className="icon-box icon-box-lg icon-box-amber mx-auto">
+            <CalendarOff size={22} />
+          </div>
+          <p className="mt-4 text-sm font-medium text-text-secondary">
             Google Calendar not connected
           </p>
           <p className="mt-1 text-xs text-text-muted">
@@ -325,16 +320,16 @@ function UpcomingMeetings() {
         <div className="space-y-8">
           {eventGroups.map((group) => (
             <section key={group.date}>
-              <div className="py-2">
-                <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">
+              <div className="section-header py-2">
+                <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   {group.label}
-                  <span className="ml-2 text-xs font-normal normal-case">
-                    ({group.events.length} event{group.events.length !== 1 && "s"})
+                  <span className="ml-2 font-normal normal-case text-text-muted/70">
+                    ({group.events.length})
                   </span>
                 </h2>
               </div>
 
-              <div className="space-y-2 mt-2">
+              <div className="space-y-2.5 mt-3">
                 {group.events.map((event) => (
                   <EventCard key={event.event_id} event={event} />
                 ))}
@@ -345,10 +340,15 @@ function UpcomingMeetings() {
       )}
 
       {events.length === 0 && !isLoading && !error && (
-        <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
-          <CalendarDays className="mx-auto h-10 w-10 text-text-muted" />
-          <p className="mt-3 text-sm text-text-muted">
-            No upcoming events in the next {days} days.
+        <div className="empty-state">
+          <div className="icon-box icon-box-lg icon-box-violet mx-auto">
+            <CalendarDays size={22} />
+          </div>
+          <p className="mt-4 text-sm font-medium text-text-secondary">
+            No upcoming events
+          </p>
+          <p className="mt-1 text-xs text-text-muted">
+            No events in the next {days} days.
           </p>
         </div>
       )}
@@ -362,11 +362,11 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
   return (
     <Link
       href={`/meetings/${meeting.id}`}
-      className="block glass-card p-5"
+      className="block glass-card card-accent p-5 pl-6"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h3 className="text-base font-semibold text-text-primary truncate">
               {meeting.title}
             </h3>
@@ -399,25 +399,25 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
           )}
           <div className="mt-3 flex items-center gap-4 text-xs text-text-muted">
             <span className="flex items-center gap-1">
-              <Clock size={13} />
+              <Clock size={12} className="text-accent-400" />
               {format(parseISO(meeting.date), "h:mm a")}
             </span>
             {meeting.duration && (
               <span className="flex items-center gap-1">
-                <Timer size={13} />
+                <Timer size={12} className="text-cyan-400" />
                 {meeting.duration} min
               </span>
             )}
             {meeting.attendees.length > 0 && (
               <span className="flex items-center gap-1">
-                <Users size={13} />
+                <Users size={12} className="text-violet-400" />
                 {meeting.attendees.length}
               </span>
             )}
             {meeting.action_items_count > 0 && (
-              <span className="flex items-center gap-1 text-accent-500">
-                <CheckSquare size={13} />
-                {meeting.action_items_count} action items
+              <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                <CheckSquare size={12} />
+                {meeting.action_items_count} actions
               </span>
             )}
           </div>
@@ -426,7 +426,7 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
           {meeting.attendees.slice(0, 4).map((a, i) => (
             <div
               key={a.id}
-              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold text-white shadow-sm"
               style={{
                 background: [
                   "linear-gradient(135deg, #6366f1, #818cf8)",
@@ -457,7 +457,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
   const durationMin = differenceInMinutes(end, start);
 
   return (
-    <Link href={`/calendar/${event.event_id}`} className="block glass-card p-5 hover:ring-2 hover:ring-accent-500/30 transition-all cursor-pointer">
+    <Link href={`/calendar/${event.event_id}`} className="block glass-card card-accent p-5 pl-6 cursor-pointer">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

@@ -76,8 +76,8 @@ function SettingField({ setting }: { setting: SettingItem }) {
     <div className="glass-card p-5 overflow-hidden">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-50">
-            <Key size={18} className="text-accent-500" />
+          <div className="icon-box icon-box-md icon-box-indigo">
+            <Key size={18} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -253,19 +253,14 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-2xl bg-surface-overlay p-1 mb-6 w-fit">
+      <div className="tab-pills mb-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? "bg-white text-text-primary shadow-sm"
-                  : "text-text-muted hover:text-text-secondary"
-              }`}
+              className={`tab-pill ${activeTab === tab.id ? "tab-pill-active" : ""}`}
             >
               <Icon size={14} />
               {tab.label}
@@ -319,8 +314,8 @@ export default function SettingsPage() {
               <div key={conn.provider} className="glass-card p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-50">
-                      <Plug size={18} className="text-accent-500" />
+                    <div className="icon-box icon-box-md icon-box-cyan">
+                      <Plug size={18} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">

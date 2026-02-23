@@ -128,27 +128,36 @@ export default function ProfileDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-3 grid gap-4 sm:grid-cols-3">
-          <div className="glass-card p-5">
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Meetings Together</p>
-            <p className="text-2xl font-bold text-text-primary mt-1">
-              {profile.meeting_count}
-            </p>
+          <div className="glass-card overflow-hidden">
+            <div className="h-1 w-full stat-gradient-1" />
+            <div className="p-5">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Meetings Together</p>
+              <p className="text-2xl font-bold text-text-primary mt-1">
+                {profile.meeting_count}
+              </p>
+            </div>
           </div>
-          <div className="glass-card p-5">
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Open Actions</p>
-            <p className="text-2xl font-bold text-text-primary mt-1">
-              {profile.action_items.length}
-            </p>
+          <div className="glass-card overflow-hidden">
+            <div className="h-1 w-full stat-gradient-2" />
+            <div className="p-5">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Open Actions</p>
+              <p className="text-2xl font-bold text-text-primary mt-1">
+                {profile.action_items.length}
+              </p>
+            </div>
           </div>
-          <div className="glass-card p-5">
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Last Seen</p>
-            <p className="text-sm font-semibold text-text-primary mt-1">
-              {traits.last_seen
-                ? format(new Date(traits.last_seen as string), "MMM d, yyyy")
-                : profile.recent_meetings[0]
-                  ? format(new Date(profile.recent_meetings[0].date), "MMM d, yyyy")
-                  : "—"}
-            </p>
+          <div className="glass-card overflow-hidden">
+            <div className="h-1 w-full stat-gradient-3" />
+            <div className="p-5">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Last Seen</p>
+              <p className="text-sm font-semibold text-text-primary mt-1">
+                {traits.last_seen
+                  ? format(new Date(traits.last_seen as string), "MMM d, yyyy")
+                  : profile.recent_meetings[0]
+                    ? format(new Date(profile.recent_meetings[0].date), "MMM d, yyyy")
+                    : "—"}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -162,7 +171,7 @@ export default function ProfileDetailPage({
                 <li key={m.id}>
                   <Link
                     href={`/meetings/${m.id}`}
-                    className="block rounded-xl p-3 hover:bg-accent-50/50 transition-colors"
+                    className="block rounded-xl p-3 hover:bg-accent-50/50 transition-colors border-l-2 border-transparent hover:border-accent-400"
                   >
                     <p className="text-sm font-medium text-text-primary">
                       {m.title}

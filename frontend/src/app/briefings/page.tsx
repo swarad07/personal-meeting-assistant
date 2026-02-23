@@ -72,10 +72,12 @@ export default function BriefingsListPage() {
           ))}
         </div>
       ) : !data || data.items.length === 0 ? (
-        <div className="text-center py-16">
-          <FileText size={48} className="mx-auto mb-4 text-text-muted" />
-          <p className="text-lg font-semibold text-text-primary">No briefings yet</p>
-          <p className="text-sm mt-1 text-text-muted">
+        <div className="empty-state">
+          <div className="icon-box icon-box-lg icon-box-violet mx-auto">
+            <FileText size={22} />
+          </div>
+          <p className="mt-4 text-sm font-medium text-text-secondary">No briefings yet</p>
+          <p className="text-xs mt-1 text-text-muted">
             Briefings are generated automatically before your upcoming meetings,
             or you can generate them manually.
           </p>
@@ -87,21 +89,21 @@ export default function BriefingsListPage() {
               <Link
                 key={briefing.id}
                 href={`/briefings/${briefing.id}`}
-                className="block glass-card p-5"
+                className="block glass-card card-accent p-5 pl-6"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-text-primary truncate">
                       {briefing.title}
                     </h3>
-                    <p className="text-sm text-text-secondary mt-1 line-clamp-2">
+                    <p className="text-sm text-text-secondary mt-1.5 line-clamp-2">
                       {briefing.content.slice(0, 200)}
                       {briefing.content.length > 200 ? "..." : ""}
                     </p>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-text-muted">
+                    <div className="flex items-center gap-3 mt-2.5 text-xs text-text-muted">
                       {briefing.created_at && (
                         <span className="flex items-center gap-1">
-                          <Clock size={12} />
+                          <Clock size={12} className="text-accent-400" />
                           {new Date(briefing.created_at).toLocaleString(
                             undefined,
                             {
@@ -114,15 +116,15 @@ export default function BriefingsListPage() {
                         </span>
                       )}
                       {briefing.topics && Array.isArray(briefing.topics) && (
-                        <span className="badge badge-info">
+                        <span className="badge badge-violet">
                           {briefing.topics.length} discussion point
                           {briefing.topics.length !== 1 ? "s" : ""}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-50 ml-4 shrink-0">
-                    <FileText size={18} className="text-accent-500" />
+                  <div className="icon-box icon-box-md icon-box-violet ml-4">
+                    <FileText size={18} />
                   </div>
                 </div>
               </Link>

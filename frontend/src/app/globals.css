@@ -31,18 +31,71 @@ body {
   color: var(--color-text-primary);
 }
 
+/* ── Card System ──────────────────────────────────────────────────── */
+
 .glass-card {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
   border-color: var(--color-border-hover);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 4px 24px rgba(99, 102, 241, 0.06),
+    0 1px 4px rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
 }
+
+.card-accent {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  border-radius: 3px 0 0 3px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.card-accent:hover::before {
+  opacity: 1;
+}
+
+.card-accent-visible::before {
+  opacity: 1;
+}
+
+.card-accent-emerald::before {
+  background: linear-gradient(180deg, #10b981, #34d399);
+  opacity: 1;
+}
+
+.card-accent-amber::before {
+  background: linear-gradient(180deg, #f59e0b, #fbbf24);
+  opacity: 1;
+}
+
+.card-accent-red::before {
+  background: linear-gradient(180deg, #ef4444, #f87171);
+  opacity: 1;
+}
+
+.card-accent-neutral::before {
+  background: linear-gradient(180deg, #94a3b8, #cbd5e1);
+  opacity: 1;
+}
+
+/* ── Gradient Text & Backgrounds ──────────────────────────────────── */
 
 .gradient-text {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
@@ -72,16 +125,44 @@ body {
   background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
 }
 
-.shimmer {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+/* ── Section Headers ──────────────────────────────────────────────── */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.section-header::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-border) 0%, transparent 100%);
 }
+
+/* ── Icon Containers ──────────────────────────────────────────────── */
+
+.icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.icon-box-sm { width: 32px; height: 32px; }
+.icon-box-md { width: 40px; height: 40px; }
+.icon-box-lg { width: 48px; height: 48px; }
+
+.icon-box-indigo { background: linear-gradient(135deg, #eef2ff, #e0e7ff); color: #6366f1; }
+.icon-box-violet { background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: #8b5cf6; }
+.icon-box-emerald { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #059669; }
+.icon-box-cyan { background: linear-gradient(135deg, #ecfeff, #cffafe); color: #0891b2; }
+.icon-box-amber { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #d97706; }
+.icon-box-rose { background: linear-gradient(135deg, #fff1f2, #ffe4e6); color: #e11d48; }
+.icon-box-gradient { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+
+/* ── Badges ───────────────────────────────────────────────────────── */
 
 .badge {
   display: inline-flex;
@@ -97,6 +178,71 @@ body {
 .badge-error { background: #fef2f2; color: #dc2626; }
 .badge-info { background: #eef2ff; color: #4f46e5; }
 .badge-neutral { background: #f1f5f9; color: #64748b; }
+.badge-violet { background: #f5f3ff; color: #7c3aed; }
+.badge-cyan { background: #ecfeff; color: #0891b2; }
+.badge-amber { background: #fffbeb; color: #d97706; }
+
+/* ── Tab Pills ────────────────────────────────────────────────────── */
+
+.tab-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 16px;
+  padding: 4px;
+  background: var(--color-surface-overlay);
+}
+
+.tab-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.tab-pill:hover {
+  color: var(--color-text-secondary);
+}
+
+.tab-pill-active {
+  background: white;
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* ── Empty States ─────────────────────────────────────────────────── */
+
+.empty-state {
+  border-radius: 20px;
+  border: 2px dashed var(--color-border);
+  padding: 48px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.3) 0%, rgba(245, 243, 255, 0.3) 100%);
+}
+
+/* ── Animations ───────────────────────────────────────────────────── */
+
+.shimmer {
+  background: linear-gradient(90deg, #eef2ff 25%, #e0e7ff 50%, #eef2ff 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 16px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Inputs ───────────────────────────────────────────────────────── */
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--color-accent-400);

@@ -86,16 +86,12 @@ export default function ActionItemsPage() {
       </div>
 
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <div className="flex items-center gap-1 rounded-2xl bg-surface-overlay p-1 w-fit">
+        <div className="tab-pills">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.label}
               onClick={() => setStatusFilter(tab.value)}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                statusFilter === tab.value
-                  ? "bg-white text-text-primary shadow-sm"
-                  : "text-text-muted hover:text-text-secondary"
-              }`}
+              className={`tab-pill ${statusFilter === tab.value ? "tab-pill-active" : ""}`}
             >
               {tab.label}
             </button>
@@ -150,7 +146,13 @@ export default function ActionItemsPage() {
             const profile = profilesByName.get(assignee.toLowerCase());
 
             return (
-              <div key={item.id} className="flex items-start gap-3 glass-card p-4">
+              <div key={item.id} className={`flex items-start gap-3 glass-card card-accent p-4 pl-5 ${
+                item.status === "done"
+                  ? "card-accent-emerald"
+                  : item.status === "dismissed"
+                    ? "card-accent-neutral"
+                    : "card-accent-amber"
+              }`}>
                 <button
                   onClick={() =>
                     updateMutation.mutate({
@@ -242,10 +244,15 @@ export default function ActionItemsPage() {
           })}
 
           {data.items.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
-              <CheckSquare className="mx-auto h-10 w-10 text-text-muted" />
-              <p className="mt-3 text-sm text-text-muted">
-                No {forMe && selfName ? `action items for ${selfName}` : `${statusFilter || ""} action items`}
+            <div className="empty-state">
+              <div className="icon-box icon-box-lg icon-box-emerald mx-auto">
+                <CheckSquare size={22} />
+              </div>
+              <p className="mt-4 text-sm font-medium text-text-secondary">
+                {forMe && selfName ? `No action items for ${selfName}` : `No ${statusFilter || ""} action items`}
+              </p>
+              <p className="mt-1 text-xs text-text-muted">
+                Action items are extracted automatically from meeting transcripts.
               </p>
             </div>
           )}

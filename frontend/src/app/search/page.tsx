@@ -42,17 +42,17 @@ function SearchResults() {
       </h1>
 
       <form onSubmit={handleSearch} className="mb-8">
-        <div className="relative">
+        <div className="relative glass-card !p-0 overflow-hidden">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-400"
           />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search meetings, people, topics..."
-            className="w-full rounded-2xl border border-border bg-surface-raised py-3.5 pl-12 pr-4 text-sm text-text-primary outline-none focus:border-accent-400 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] placeholder:text-text-muted transition-all"
+            className="w-full bg-transparent py-4 pl-12 pr-4 text-sm text-text-primary outline-none placeholder:text-text-muted border-none focus:shadow-none"
           />
         </div>
       </form>
@@ -83,20 +83,20 @@ function SearchResults() {
               <Link
                 key={result.meeting_id}
                 href={`/meetings/${result.meeting_id}`}
-                className="block glass-card p-5"
+                className="block glass-card card-accent p-5 pl-6"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm font-semibold text-text-primary">
                       {result.title}
                     </h3>
-                    <p className="mt-1 text-sm text-text-secondary line-clamp-2">
+                    <p className="mt-1.5 text-sm text-text-secondary line-clamp-2">
                       {result.snippet}
                     </p>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-text-muted">
+                    <div className="mt-2.5 flex items-center gap-3 text-xs text-text-muted">
                       {result.date && (
                         <span className="flex items-center gap-1">
-                          <Clock size={11} />
+                          <Clock size={11} className="text-accent-400" />
                           {(() => {
                             try {
                               return formatDistanceToNow(new Date(result.date), {
@@ -113,7 +113,7 @@ function SearchResults() {
                           result.source === "fulltext"
                             ? "badge-info"
                             : result.source === "semantic"
-                              ? "bg-purple-50 text-purple-600"
+                              ? "badge-violet"
                               : "badge-success"
                         }`}
                       >
@@ -127,10 +127,15 @@ function SearchResults() {
           </div>
 
           {data.total === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-border p-12 text-center">
-              <Search className="mx-auto h-10 w-10 text-text-muted" />
-              <p className="mt-3 text-sm text-text-muted">
-                No results found for &ldquo;{initialQuery}&rdquo;
+            <div className="empty-state">
+              <div className="icon-box icon-box-lg icon-box-indigo mx-auto">
+                <Search size={22} />
+              </div>
+              <p className="mt-4 text-sm font-medium text-text-secondary">
+                No results found
+              </p>
+              <p className="mt-1 text-xs text-text-muted">
+                Try different keywords for &ldquo;{initialQuery}&rdquo;
               </p>
             </div>
           )}
