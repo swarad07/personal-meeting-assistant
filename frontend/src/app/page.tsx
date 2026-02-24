@@ -12,6 +12,7 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
 
 export default function DashboardPage() {
   const { data: meetings } = useQuery({
@@ -38,14 +39,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-text-primary">
-          Dashboard
-        </h1>
-        <p className="text-sm text-text-muted mt-1">
-          Your meeting intelligence at a glance
-        </p>
-      </div>
+      <DashboardHero />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
