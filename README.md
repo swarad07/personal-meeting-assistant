@@ -7,7 +7,7 @@ A multi-AI-agent system that acts as your personal meeting intelligence hub. It 
 - **Meeting Sync** — Automatically syncs meetings and transcripts from Granola via MCP
 - **Entity Extraction** — AI-powered extraction of people, organizations, topics, and projects
 - **Knowledge Graph** — Neo4j-backed relationship graph connecting entities across meetings
-- **Pre-Meeting Briefings** — GPT-4o generated briefings with attendee context, open action items, and discussion points
+- **Pre-Meeting Briefings** — LLM (OpenAI) generated briefings with attendee context, open action items, and discussion points
 - **Hybrid Search** — Full-text (PostgreSQL tsvector), semantic (pgvector), and graph (Neo4j) search with reciprocal rank fusion
 - **Action Item Tracking** — Automatic extraction and tracking of todos across meetings
 - **Profile Building** — Learns about you and your contacts over time

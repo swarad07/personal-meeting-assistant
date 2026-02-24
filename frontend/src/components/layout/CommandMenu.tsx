@@ -24,10 +24,15 @@ export function CommandMenu() {
         e.preventDefault();
         setOpen((prev) => !prev);
       }
+      if (e.key === "Escape" && open) {
+        e.preventDefault();
+        setOpen(false);
+        setQuery("");
+      }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [open]);
 
   const handleSearch = useCallback(() => {
     if (query.trim()) {
